@@ -48,6 +48,11 @@
                    class="nav-link-custom {{ request()->is('modulos/cadastros') ? 'active' : '' }}">
                     <i class="bi bi-collection"></i><span>Cadastros</span>
                 </a>
+                <a href="{{ route('products.index') }}"
+                class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                    <i class="bi bi-collection"></i>
+                    <span>Cadastros / Produtos</span>
+                </a>
 
                 <a href="{{ route('modules.show', ['modulo' => 'estoque']) }}"
                    class="nav-link-custom {{ request()->is('modulos/estoque') ? 'active' : '' }}">
@@ -161,5 +166,7 @@
             if (event.key === 'Escape') setMenuOpen(false);
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

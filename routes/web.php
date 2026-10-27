@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\ProductController;
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 });
@@ -9,6 +11,18 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
+
+#Produtos
+Route::resource('produtos', ProductController::class)
+    ->except(['show', 'destroy'])
+    ->parameters(['produtos' => 'product'])
+    ->names('products');
+
+Route::patch(
+    '/produtos/{product}/desativar',
+    [ProductController::class, 'deactivate']
+)->name('products.deactivate');
+
 
 Route::get('/modulos/{modulo}', function (string $modulo) {
     $modules = [
