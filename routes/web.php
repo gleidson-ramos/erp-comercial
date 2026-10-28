@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\StockController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -22,6 +25,40 @@ Route::patch(
     '/produtos/{product}/desativar',
     [ProductController::class, 'deactivate']
 )->name('products.deactivate');
+
+#Categorias
+Route::resource('categorias', CategoryController::class)
+    ->except(['show', 'destroy'])
+    ->parameters(['categorias' => 'category'])
+    ->names('categories');
+
+Route::patch(
+    '/categorias/{category}/desativar',
+    [CategoryController::class, 'deactivate']
+)->name('categories.deactivate');
+
+Route::resource('unidades', UnitController::class)
+    ->except(['show', 'destroy'])
+    ->parameters(['unidades' => 'unit'])
+    ->names('units');
+
+Route::patch(
+    '/unidades/{unit}/desativar',
+    [UnitController::class, 'deactivate']
+)->name('units.deactivate');
+
+#Estoque
+
+Route::prefix('estoque')
+    ->name('stock.')
+    ->controller(StockController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/movimentacoes/criar', 'create')->name('create');
+        Route::post('/movimentacoes', 'store')->name('store');
+        Route::get('/historico', 'history')->name('history');
+    });
+
 
 
 Route::get('/modulos/{modulo}', function (string $modulo) {

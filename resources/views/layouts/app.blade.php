@@ -43,21 +43,31 @@
 
             <div class="sidebar-label">OPERAÇÃO</div>
 
-            <nav class="sidebar-nav">
-                <a href="{{ route('modules.show', ['modulo' => 'cadastros']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/cadastros') ? 'active' : '' }}">
-                    <i class="bi bi-collection"></i><span>Cadastros</span>
-                </a>
+            <nav class="sidebar-nav">                
                 <a href="{{ route('products.index') }}"
                 class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                    <i class="bi bi-collection"></i>
-                    <span>Cadastros / Produtos</span>
+                    <i class="bi bi-box-seam"></i>
+                    <span>Produtos</span>
                 </a>
 
-                <a href="{{ route('modules.show', ['modulo' => 'estoque']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/estoque') ? 'active' : '' }}">
-                    <i class="bi bi-box-seam"></i><span>Estoque</span>
+                <a href="{{ route('categories.index') }}"
+                class="nav-link-custom {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                    <i class="bi bi-tags"></i>
+                    <span>Categorias</span>
                 </a>
+
+                <a href="{{ route('units.index') }}"
+                class="nav-link-custom {{ request()->routeIs('units.*') ? 'active' : '' }}">
+                    <i class="bi bi-rulers"></i>
+                    <span>Unidades de medida</span>
+                </a>
+                
+                <a href="{{ route('stock.index') }}"
+                class="nav-link-custom {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                    <i class="bi bi-boxes"></i>
+                    <span>Estoque</span>
+                </a>
+
 
                 <a href="{{ route('modules.show', ['modulo' => 'compras']) }}"
                    class="nav-link-custom {{ request()->is('modulos/compras') ? 'active' : '' }}">
