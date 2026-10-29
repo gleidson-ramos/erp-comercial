@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\CustomerController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -48,7 +49,6 @@ Route::patch(
 )->name('units.deactivate');
 
 #Estoque
-
 Route::prefix('estoque')
     ->name('stock.')
     ->controller(StockController::class)
@@ -58,6 +58,14 @@ Route::prefix('estoque')
         Route::post('/movimentacoes', 'store')->name('store');
         Route::get('/historico', 'history')->name('history');
     });
+
+#Cliente
+
+Route::resource('clientes', CustomerController::class)
+    ->except(['show', 'destroy'])
+    ->parameters(['clientes' => 'customer'])
+    ->names('customers');
+
 
 
 

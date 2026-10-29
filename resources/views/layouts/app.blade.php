@@ -44,6 +44,12 @@
             <div class="sidebar-label">OPERAÇÃO</div>
 
             <nav class="sidebar-nav">                
+                <a href="{{ route('customers.index') }}"
+                class="nav-link-custom {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i>
+                    <span>Clientes</span>
+                </a>
+
                 <a href="{{ route('products.index') }}"
                 class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
                     <i class="bi bi-box-seam"></i>
