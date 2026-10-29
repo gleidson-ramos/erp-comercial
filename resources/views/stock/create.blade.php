@@ -106,6 +106,9 @@
                     <option value="COMPRA" @selected(old('reason') === 'COMPRA')>
                         Compra
                     </option>
+                    <option value="VENDA" @selected(old('reason') === 'VENDA')>
+                        Venda
+                    </option>
                     <option value="DEVOLUCAO" @selected(old('reason') === 'DEVOLUCAO')>
                         Devolução
                     </option>

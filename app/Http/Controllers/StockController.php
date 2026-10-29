@@ -156,6 +156,7 @@ class StockController extends Controller
                 'required',
                 Rule::in([
                     'COMPRA',
+                    'VENDA',
                     'DEVOLUCAO',
                     'AJUSTE',
                     'PERDA',

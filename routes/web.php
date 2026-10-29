@@ -7,6 +7,11 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\GoodsReceiptController;
+use App\Http\Controllers\SaleController;
+
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -60,12 +65,59 @@ Route::prefix('estoque')
     });
 
 #Cliente
-
 Route::resource('clientes', CustomerController::class)
     ->except(['show', 'destroy'])
     ->parameters(['clientes' => 'customer'])
     ->names('customers');
 
+
+#Fornecedores
+Route::prefix('fornecedores')
+    ->name('suppliers.')
+    ->controller(SupplierController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{supplier}/edit', 'edit')->name('edit');
+        Route::put('/{supplier}', 'update')->name('update');
+        Route::patch('/{supplier}/deactivate', 'deactivate')->name('deactivate');
+    });
+
+
+#Compras
+Route::prefix('compras')
+    ->name('purchases.')
+    ->controller(PurchaseController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{purchase}/recebimentos/create',[GoodsReceiptController::class, 'create'])->name('receipts.create');
+        Route::post('/{purchase}/recebimentos', [GoodsReceiptController::class, 'store'])->name('receipts.store');
+
+        Route::get('/{purchase}/edit', 'edit')->name('edit');
+        Route::put('/{purchase}', 'update')->name('update');
+        Route::get('/{purchase}', 'show')->name('show');
+        Route::patch('/{purchase}/deactivate', 'deactivate')->name('deactivate');
+        Route::patch('/{purchase}/confirmar', 'confirm')->name('confirm');
+        Route::patch('/{purchase}/cancelar', 'cancel')->name('cancel');
+    });
+
+#Vendas
+Route::prefix('vendas')
+    ->name('sales.')
+    ->controller(SaleController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{sale}/edit', 'edit')->name('edit');
+        Route::put('/{sale}', 'update')->name('update');
+        Route::get('/{sale}', 'show')->name('show');
+        Route::patch('/{sale}/cancelar', 'cancel')->name('cancel');
+        Route::patch('/{sale}/concluir', 'complete')->name('complete');
+    });
 
 
 

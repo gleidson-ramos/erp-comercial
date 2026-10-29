@@ -50,6 +50,12 @@
                     <span>Clientes</span>
                 </a>
 
+                <a href="{{ route('suppliers.index') }}"
+                class="nav-link-custom {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
+                    <i class="bi bi-truck"></i>
+                    <span>Fornecedores</span>
+                </a>
+
                 <a href="{{ route('products.index') }}"
                 class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
                     <i class="bi bi-box-seam"></i>
@@ -74,10 +80,10 @@
                     <span>Estoque</span>
                 </a>
 
-
-                <a href="{{ route('modules.show', ['modulo' => 'compras']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/compras') ? 'active' : '' }}">
-                    <i class="bi bi-truck"></i><span>Compras</span>
+                <a href="{{ route('purchases.index') }}"
+                class="nav-link-custom {{ request()->routeIs('purchases.*') ? 'active' : '' }}">
+                    <i class="bi bi-tags"></i>
+                    <span>Compras</span>
                 </a>
 
                 <a href="{{ route('modules.show', ['modulo' => 'vendas']) }}"
