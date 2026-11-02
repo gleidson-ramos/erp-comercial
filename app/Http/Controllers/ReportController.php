@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use app\Models\User;
 
 class ReportController extends Controller
 {
@@ -13,11 +15,26 @@ class ReportController extends Controller
         private ReportService $reportService
     ) {}
 
+    private function authorizeReport(string $permission): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user?->hasPermission($permission),
+            403,
+            'Você não possui permissão para acessar este relatório.'
+        );
+    }
+
     /**
      * Relatório de vendas.
      */
     public function sales(Request $request)
     {
+        // Relatório de vendas
+        $this->authorizeReport('sales.view');
+
         $validated = $request->validate([
             'date_from' => [
                 'nullable',
@@ -97,6 +114,8 @@ class ReportController extends Controller
 
     public function financial(Request $request)
     {
+        $this->authorizeReport('financial-accounts.view');
+
         $validated = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -130,6 +149,8 @@ class ReportController extends Controller
     
     public function stock(Request $request)
     {
+        $this->authorizeReport('stock.view');
+
         $validated = $request->validate([
             'product_id' => [
                 'nullable',
@@ -202,6 +223,8 @@ class ReportController extends Controller
     
     public function purchases(Request $request)
     {
+        $this->authorizeReport('purchases.view');
+
         $validated = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -262,6 +285,24 @@ class ReportController extends Controller
 
     public function index()
     {
-        return view('reports.index');
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        abort_unless($user, 403);
+
+        $availableReports = [
+            'sales' => $user->hasPermission('sales.view'),
+            'purchases' => $user->hasPermission('purchases.view'),
+            'stock' => $user->hasPermission('stock.view'),
+            'financial' => $user->hasPermission('financial-accounts.view'),
+        ];
+
+        abort_unless(
+            in_array(true, $availableReports, true),
+            403,
+            'Você não possui permissão para acessar relatórios.'
+        );
+
+        return view('reports.index', compact('availableReports'));
     }
 }

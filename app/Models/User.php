@@ -118,4 +118,24 @@ class User extends Authenticatable
 
         return true;
     }
+
+    public function accessibleNotificationTypes(): array
+    {
+        $types = [];
+
+        if ($this->hasPermission('stock.view')) {
+            $types[] = 'ESTOQUE_BAIXO';
+        }
+
+        if ($this->hasPermission('financial-accounts.view')) {
+            $types[] = 'CONTA_VENCIDA';
+            $types[] = 'CONTA_VENCENDO';
+        }
+
+        if ($this->hasPermission('purchases.view')) {
+            $types[] = 'COMPRA_ATRASADA';
+        }
+
+        return $types;
+    }
 }

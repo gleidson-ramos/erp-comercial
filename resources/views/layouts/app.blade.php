@@ -58,6 +58,40 @@
                         <span>Dashboard</span>
                     </a>
                 @endif
+                
+
+                <a href="{{ route('notifications.index') }}"
+                class="nav-link-custom {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                    <span>
+                        <i class="bi bi-bell me-2"></i>
+                        Notificações
+                    </span>
+
+                    @auth
+                        @php
+                            $sidebarAllowedTypes = auth()->user()
+                                ->accessibleNotificationTypes();
+
+                            $sidebarUnreadCount = empty($sidebarAllowedTypes)
+                                ? 0
+                                : auth()->user()
+                                    ->unreadNotifications()
+                                    ->whereIn(
+                                        \Illuminate\Support\Facades\DB::raw(
+                                            "(data::jsonb ->> 'type')"
+                                        ),
+                                        $sidebarAllowedTypes
+                                    )
+                                    ->count();
+                        @endphp
+
+                        @if($sidebarUnreadCount > 0)
+                            <span class="badge bg-danger rounded-pill">
+                                {{ $sidebarUnreadCount > 99 ? '99+' : $sidebarUnreadCount }}
+                            </span>
+                        @endif
+                    @endauth
+                </a>
 
             </nav>
 
@@ -154,11 +188,18 @@
                     </a>
                 @endif
 
-                @if ($user->hasPermission('modules.view'))
+                @if(
+                    auth()->user()->hasPermission('sales.view') ||
+                    auth()->user()->hasPermission('purchases.view') ||
+                    auth()->user()->hasPermission('stock.view') ||
+                    auth()->user()->hasPermission('financial-accounts.view')
+                )
                     <a href="{{ route('reports.index') }}"
                     class="nav-link-custom {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                        <i class="bi bi-file-earmark-bar-graph"></i>
-                        <span>Relatórios</span>
+                        <span>
+                            <i class="bi bi-bar-chart-line me-2"></i>
+                            Relatórios
+                        </span>
                     </a>
                 @endif
 

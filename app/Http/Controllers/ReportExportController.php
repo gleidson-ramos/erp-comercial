@@ -8,13 +8,32 @@ use App\Exports\StockExport;
 use App\Exports\FinancialExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Controllers\ReportController;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\ReportService;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class ReportExportController extends Controller
 {
+    private function authorizeReport(string $permission): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user?->hasPermission($permission),
+            403,
+            'Você não possui permissão para exportar este relatório.'
+        );
+    }
+
+    /**
+     * Exportação Excel de vendas.
+     */
     public function sales(Request $request)
     {
+        $this->authorizeReport('sales.view');
+
         $filters = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -28,8 +47,13 @@ class ReportExportController extends Controller
         );
     }
 
+    /**
+     * Exportação Excel de compras.
+     */
     public function purchases(Request $request)
     {
+        $this->authorizeReport('purchases.view');
+
         $filters = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -43,8 +67,13 @@ class ReportExportController extends Controller
         );
     }
 
+    /**
+     * Exportação Excel de estoque.
+     */
     public function stock(Request $request)
     {
+        $this->authorizeReport('stock.view');
+
         $filters = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -58,8 +87,13 @@ class ReportExportController extends Controller
         );
     }
 
+    /**
+     * Exportação Excel financeiro.
+     */
     public function financial(Request $request)
     {
+        $this->authorizeReport('financial-accounts.view');
+
         $filters = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
@@ -73,13 +107,27 @@ class ReportExportController extends Controller
         );
     }
 
-    public function salesPdf(Request $request, ReportController $reportController)
-    {
+    /**
+     * Exportação PDF de vendas.
+     */
+    public function salesPdf(
+        Request $request,
+        ReportController $reportController,
+        ReportService $reportService
+    ) {
+        $this->authorizeReport('sales.view');
+
         $report = $reportController->sales($request);
+
+        $data = $report->getData();
+
+        $data['sales'] = $reportService->salesForExport(
+            $data['filters']
+        );
 
         $pdf = Pdf::loadView(
             'reports.exports.sales',
-            $report->getData()
+            $data
         );
 
         $pdf->setPaper('a4', 'landscape');
@@ -89,13 +137,27 @@ class ReportExportController extends Controller
         );
     }
 
-    public function purchasesPdf(Request $request, ReportController $reportController)
-    {
+    /**
+     * Exportação PDF de compras.
+     */
+    public function purchasesPdf(
+        Request $request,
+        ReportController $reportController,
+        ReportService $reportService
+    ) {
+        $this->authorizeReport('purchases.view');
+
         $report = $reportController->purchases($request);
+
+        $data = $report->getData();
+
+        $data['purchases'] = $reportService->purchasesForExport(
+            $data['filters']
+        );
 
         $pdf = Pdf::loadView(
             'reports.exports.purchases',
-            $report->getData()
+            $data
         );
 
         $pdf->setPaper('a4', 'landscape');
@@ -105,13 +167,46 @@ class ReportExportController extends Controller
         );
     }
 
-    public function stockPdf(Request $request, ReportController $reportController)
-    {
+    /**
+     * Exportação PDF de estoque.
+     */
+    public function stockPdf(
+        Request $request,
+        ReportController $reportController,
+        ReportService $reportService
+    ) {
+        $this->authorizeReport('stock.view');
+
         $report = $reportController->stock($request);
+
+        $data = $report->getData();
+
+        $filters = [
+            'product_id' => $data['filters']['product_id'] ?? null,
+            'date_from' => $data['filters']['date_from'],
+            'date_to' => $data['filters']['date_to'],
+            'type' => $data['filters']['type'] ?? null,
+        ];
+
+        $stockFilters = [
+            'product_id' => $filters['product_id'],
+        ];
+
+        $data['stockPosition'] = $reportService->stockPositionForExport(
+            $stockFilters
+        );
+
+        $data['lowStockProducts'] = $reportService->productsBelowMinimumStockForExport(
+            $stockFilters
+        );
+
+        $data['movements'] = $reportService->stockMovementsForExport(
+            $filters
+        );
 
         $pdf = Pdf::loadView(
             'reports.exports.stock',
-            $report->getData()
+            $data
         );
 
         $pdf->setPaper('a4', 'landscape');
@@ -121,13 +216,27 @@ class ReportExportController extends Controller
         );
     }
 
-    public function financialPdf(Request $request, ReportController $reportController)
-    {
+    /**
+     * Exportação PDF financeiro.
+     */
+    public function financialPdf(
+        Request $request,
+        ReportController $reportController,
+        ReportService $reportService
+    ) {
+        $this->authorizeReport('financial-accounts.view');
+
         $report = $reportController->financial($request);
+
+        $data = $report->getData();
+
+        $data['accounts'] = $reportService->financialAccountsForExport(
+            $data['filters']
+        );
 
         $pdf = Pdf::loadView(
             'reports.exports.financial',
-            $report->getData()
+            $data
         );
 
         $pdf->setPaper('a4', 'landscape');

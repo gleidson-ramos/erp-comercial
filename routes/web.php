@@ -22,6 +22,12 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportExportController;
+use Illuminate\Support\Facades\Schedule;
+use App\Http\Controllers\NotificationController;
+
+Schedule::command('alerts:generate')
+    ->dailyAt('07:00')
+    ->withoutOverlapping();
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +68,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->middleware('permission:dashboard.view')
         ->name('dashboard');
 
+
+    Route::middleware('auth')->prefix('notificacoes')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])
+            ->name('index');
+
+        Route::patch('/{id}/marcar-como-lida', [NotificationController::class, 'markAsRead'])
+            ->name('read');
+
+        Route::patch('/marcar-todas-como-lidas', [NotificationController::class, 'markAllAsRead'])
+            ->name('read-all');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -136,7 +153,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     
     Route::prefix('relatorios')
     ->name('reports.')
-    ->middleware('permission:modules.view')
     ->group(function () {
         Route::get('/', [ReportController::class, 'index'])
             ->name('index');

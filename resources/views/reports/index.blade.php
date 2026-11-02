@@ -17,6 +17,7 @@
     <div class="row g-3">
 
         {{-- Relatório de Vendas --}}
+        @if(auth()->user()->hasPermission('sales.view'))
         <div class="col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex flex-column">
@@ -40,8 +41,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Relatório de Compras --}}
+        @if(auth()->user()->hasPermission('purchases.view'))
         <div class="col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex flex-column">
@@ -65,8 +68,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Relatório de Estoque --}}
+        @if(auth()->user()->hasPermission('stock.view'))
         <div class="col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex flex-column">
@@ -90,8 +95,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- Relatório Financeiro --}}
+        @if(auth()->user()->hasPermission('financial-accounts.view'))
         <div class="col-md-6 col-xl-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body d-flex flex-column">
@@ -115,6 +122,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
     </div>
 

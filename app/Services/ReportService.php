@@ -509,4 +509,70 @@ class ReportService
             ->paginate(20)
             ->withQueryString();
     }
+
+    /**
+     * Todos os registros de vendas para exportação.
+     */
+    public function salesForExport(array $filters)
+    {
+        return $this->completedSalesQuery($filters)
+            ->with('customer')
+            ->orderByDesc('sale_date')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Todos os registros de compras para exportação.
+     */
+    public function purchasesForExport(array $filters)
+    {
+        return $this->purchasesQuery($filters)
+            ->with('supplier')
+            ->orderByDesc('purchase_date')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Todas as contas financeiras para exportação.
+     */
+    public function financialAccountsForExport(array $filters)
+    {
+        return $this->financialAccountsQuery($filters)
+            ->orderBy('due_date')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Todas as movimentações de estoque para exportação.
+     */
+    public function stockMovementsForExport(array $filters)
+    {
+        return $this->stockMovementsQuery($filters)
+            ->orderByDesc('moved_at')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * Posição completa do estoque para exportação.
+     */
+    public function stockPositionForExport(array $filters)
+    {
+        return $this->stockPositionQuery($filters)
+            ->orderBy('product_id')
+            ->get();
+    }
+
+    /**
+     * Todos os produtos abaixo do estoque mínimo para exportação.
+     */
+    public function productsBelowMinimumStockForExport(array $filters)
+    {
+        return $this->lowStockQuery($filters)
+            ->orderBy('product_id')
+            ->get();
+    }
 }
