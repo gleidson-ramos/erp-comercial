@@ -108,27 +108,30 @@
                             </td>
                             <td>
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('products.edit', $product) }}"
-                                       class="btn btn-sm btn-outline-primary"
-                                       title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                    {{-- Botão editar --}}
+                                            <a
+                                                href="{{ route('products.edit', $product) }}"
+                                                class="btn btn-sm btn-outline-primary"
+                                            >
+                                                Editar
+                                            </a>
 
-                                    @if ($product->is_active)
-                                        <form
-                                            method="POST"
-                                            action="{{ route('products.deactivate', $product) }}"
-                                            onsubmit="return confirm('Deseja desativar este produto?')"
-                                        >
-                                            @csrf
-                                            @method('PATCH')
+                                            {{-- Ativar / Desativar --}}
+                                            <form
+                                                method="POST"
+                                                action="{{ route('products.toggle-status', $product) }}"
+                                                onsubmit="return confirm('Deseja {{ $product->is_active ? 'desativar' : 'ativar' }} este produto?')"
+        >
+            @csrf
+            @method('PATCH')
 
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    title="Desativar">
-                                                <i class="bi bi-person-dash"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+            <button
+                type="submit"
+                class="btn btn-sm {{ $product->is_active ? 'btn-outline-danger' : 'btn-outline-success' }}"
+            >
+                {{ $product->is_active ? 'Desativar' : 'Ativar' }}
+            </button>
+        </form>
                                 </div>
                             </td>
                         </tr>

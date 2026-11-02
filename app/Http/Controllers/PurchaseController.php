@@ -10,11 +10,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Models\FinancialAccount;
+use Illuminate\Support\Facades\DB;
+use App\Services\AttachmentService;
+use App\Models\AuditLog;
+use App\Models\GoodsReceipt;
 
 class PurchaseController extends Controller
 {
     public function __construct(
-        private readonly PurchaseService $purchaseService
+        private readonly PurchaseService $purchaseService,
+        private readonly AttachmentService $attachmentService
     ) {
     }
 
@@ -79,10 +85,22 @@ class PurchaseController extends Controller
     }
 
     public function store(Request $request): RedirectResponse
-    {
+{
         $data = $this->validatePurchase($request);
 
-        $purchase = $this->purchaseService->create($data);
+        $files = $data['attachments'] ?? [];
+
+        unset($data['attachments']);
+
+        $purchase = DB::transaction(function () use ($data, $files) {
+            $purchase = $this->purchaseService->create($data);
+
+            if (!empty($files)) {
+                $this->attachmentService->storeMany($purchase, $files);
+            }
+
+            return $purchase;
+        }, 3);
 
         return redirect()
             ->route('purchases.show', $purchase)
@@ -95,9 +113,47 @@ class PurchaseController extends Controller
             'supplier',
             'items.product',
             'receipts.items.purchaseItem.product',
+            'attachments.uploader',
         ]);
 
-        return view('purchases.show', compact('purchase'));
+        $purchase->loadMissing([
+            'financialAccount.transactions',
+        ]);
+        
+        // Usuário que criou o rascunho.
+        $creator = AuditLog::query()
+            ->where('auditable_type', $purchase->getMorphClass())
+            ->where('auditable_id', (string) $purchase->getKey())
+            ->where('event', 'created')
+            ->first();
+
+        // Usuário que confirmou a compra.
+        $confirmationLog = AuditLog::query()
+            ->where('auditable_type', $purchase->getMorphClass())
+            ->where('auditable_id', (string) $purchase->getKey())
+            ->where('event', 'updated')
+            ->where('new_values->status', \App\Models\Purchase::STATUS_CONFIRMED)
+            ->latest('created_at')
+            ->first();
+
+        // Usuários que registraram cada recebimento.
+        $receiptCreators = collect();
+
+        if ($purchase->receipts->isNotEmpty()) {
+            $receiptCreators = AuditLog::query()
+                ->where('auditable_type', (new GoodsReceipt())->getMorphClass())
+                ->whereIn('auditable_id', $purchase->receipts->modelKeys())
+                ->where('event', 'created')
+                ->get()
+                ->keyBy('auditable_id');
+        }
+
+        return view('purchases.show', compact(
+            'purchase',
+            'creator',
+            'confirmationLog',
+            'receiptCreators'
+        ));
     }
 
     public function edit(Purchase $purchase): View|RedirectResponse
@@ -136,46 +192,100 @@ class PurchaseController extends Controller
     ): RedirectResponse {
         $data = $this->validatePurchase($request, $purchase);
 
-        $this->purchaseService->update($purchase, $data);
+        $files = $data['attachments'] ?? [];
+
+        unset($data['attachments']);
+
+        DB::transaction(function () use ($purchase, $data, $files) {
+            $this->purchaseService->update($purchase, $data);
+
+            if (!empty($files)) {
+                $this->attachmentService->storeMany($purchase, $files);
+            }
+        }, 3);
 
         return redirect()
             ->route('purchases.show', $purchase)
             ->with('success', 'Compra atualizada com sucesso.');
     }
 
-    public function confirm(Purchase $purchase): RedirectResponse
-    {
-        $this->purchaseService->confirm($purchase);
+    public function confirm(Request $request, Purchase $purchase): RedirectResponse {
+        $data = $request->validate([
+            'due_date' => [
+                'required',
+                'date',
+                'after_or_equal:' . $purchase->purchase_date->format('Y-m-d'),
+            ],
+        ], [
+            'due_date.required' => 'Informe a data de vencimento da conta a pagar.',
+            'due_date.date' => 'Informe uma data de vencimento válida.',
+            'due_date.after_or_equal' =>
+                'A data de vencimento não pode ser anterior à data da compra.',
+        ]);
+
+        $this->purchaseService->confirm(
+            $purchase,
+            $data['due_date']
+        );
 
         return redirect()
             ->route('purchases.show', $purchase)
-            ->with('success', 'Compra confirmada com sucesso.');
+            ->with(
+                'success',
+                'Compra confirmada e conta a pagar gerada com sucesso.'
+            );
     }
+
 
     public function cancel(Purchase $purchase): RedirectResponse
     {
-        if (! in_array($purchase->status, [
-            Purchase::STATUS_DRAFT,
-            Purchase::STATUS_CONFIRMED,
-        ], true)) {
+        $error = DB::transaction(function () use ($purchase) {
+            $purchase = Purchase::query()
+                ->lockForUpdate()
+                ->findOrFail($purchase->id);
+
+            if (! in_array($purchase->status, [
+                Purchase::STATUS_DRAFT,
+                Purchase::STATUS_CONFIRMED,
+            ], true)) {
+                return 'Esta compra não pode ser cancelada no estado atual.';
+            }
+
+            if ($purchase->receipts()->exists()) {
+                return 'Não é possível cancelar uma compra que já possui recebimentos.';
+            }
+
+            $account = FinancialAccount::query()
+                ->where('purchase_id', $purchase->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($account && $account->transactions()->exists()) {
+                return 'Não é possível cancelar esta compra porque sua conta a pagar possui movimentações financeiras.';
+            }
+
+            if ($account && $account->status !== FinancialAccount::STATUS_CANCELLED) {
+                $account->update([
+                    'status' => FinancialAccount::STATUS_CANCELLED,
+                ]);
+            }
+
+            $purchase->update([
+                'status' => Purchase::STATUS_CANCELLED,
+            ]);
+
+            return null;
+        }, 3);
+
+        if ($error !== null) {
             return redirect()
                 ->route('purchases.show', $purchase)
-                ->with('error', 'Esta compra não pode ser cancelada no estado atual.');
+                ->with('error', $error);
         }
-
-        if ($purchase->receipts()->exists()) {
-            return redirect()
-                ->route('purchases.show', $purchase)
-                ->with('error', 'Não é possível cancelar uma compra que já possui recebimentos.');
-        }
-
-        $purchase->update([
-            'status' => Purchase::STATUS_CANCELLED,
-        ]);
 
         return redirect()
             ->route('purchases.show', $purchase)
-            ->with('success', 'Compra cancelada.');
+            ->with('success', 'Compra e conta financeira vinculada canceladas com sucesso.');
     }
 
     private function validatePurchase(
@@ -201,6 +311,18 @@ class PurchaseController extends Controller
             'purchase_date' => [
                 'required',
                 'date',
+            ],
+
+            'attachments' => [
+                'nullable',
+                'array',
+                'max:10',
+            ],
+
+            'attachments.*' => [
+                'file',
+                'mimes:pdf,jpg,jpeg,png,webp',
+                'max:10240',
             ],
 
             'expected_delivery_date' => [
@@ -272,6 +394,17 @@ class PurchaseController extends Controller
             'items.*.unit_cost.required' => 'Informe o custo unitário de cada produto.',
             'items.*.unit_cost.decimal' =>
                 'Os custos unitários podem ter até duas casas decimais.',
+            'attachments.max' =>
+                'Você pode enviar no máximo 10 comprovantes por operação.',
+
+            'attachments.*.file' =>
+                'Um dos arquivos enviados é inválido.',
+
+            'attachments.*.mimes' =>
+                'Os comprovantes devem estar em PDF ou imagem JPG, JPEG, PNG ou WEBP.',
+
+            'attachments.*.max' =>
+                'Cada comprovante deve ter no máximo 10 MB.',
         ]);
     }
 }

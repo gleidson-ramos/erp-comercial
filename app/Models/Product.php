@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
+    use Auditable;
+
     protected $fillable = [
         'category_id',
         'unit_id',
@@ -42,7 +45,6 @@ class Product extends Model
         return $this->belongsTo(Unit::class);
     }
 
-    
     public function inventoryStock(): HasOne
     {
         return $this->hasOne(InventoryStock::class);
@@ -52,5 +54,4 @@ class Product extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
-
 }

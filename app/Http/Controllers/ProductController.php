@@ -146,4 +146,20 @@ class ProductController extends Controller
             'sale_price.gt' => 'O preço de venda deve ser maior que zero.',
         ]);
     }
+
+    public function toggleStatus(Product $product)
+    {
+        $product->update([
+            'is_active' => ! $product->is_active,
+        ]);
+
+        return redirect()
+            ->route('products.index')
+            ->with(
+                'success',
+                $product->is_active
+                    ? 'Produto ativado com sucesso.'
+                    : 'Produto desativado com sucesso.'
+            );
+    }
 }

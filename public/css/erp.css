@@ -711,6 +711,11 @@ a {
     background: #fdeaea;
 }
 
+.status-partial {
+    color: #856404;
+    background: #fff3cd;
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;

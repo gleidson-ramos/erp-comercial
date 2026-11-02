@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>@yield('title', 'Dashboard') | ERP Comercial</title>
+    <title>@yield('title', 'Início') | ERP Comercial</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
@@ -19,9 +19,19 @@
     <link rel="stylesheet" href="{{ asset('css/erp.css') }}">
 </head>
 <body>
+    @php
+        $user = auth()->user();
+
+        $homeUrl = route('home');
+
+        $canAccessModule = fn (array $permissions) =>
+            $user->hasAnyPermission($permissions);
+    @endphp
+
+
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
-            <a href="{{ route('dashboard') }}" class="brand">
+            <a href="{{ $homeUrl }}" class="brand">
                 <span class="brand-icon">
                     <i class="bi bi-grid-1x2-fill"></i>
                 </span>
@@ -34,97 +44,155 @@
             <div class="sidebar-label">PRINCIPAL</div>
 
             <nav class="sidebar-nav">
-                <a href="{{ route('dashboard') }}"
-                   class="nav-link-custom {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+
+                <a href="{{ route('home') }}"
+                class="nav-link-custom {{ request()->routeIs('home') ? 'active' : '' }}">
                     <i class="bi bi-house-door"></i>
-                    <span>Dashboard</span>
+                    <span>Início</span>
                 </a>
+
+                @if ($user->hasPermission('dashboard.view'))
+                    <a href="{{ route('dashboard') }}"
+                    class="nav-link-custom {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                @endif
+
             </nav>
 
             <div class="sidebar-label">OPERAÇÃO</div>
 
             <nav class="sidebar-nav">                
-                <a href="{{ route('customers.index') }}"
-                class="nav-link-custom {{ request()->routeIs('customers.*') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i>
-                    <span>Clientes</span>
-                </a>
+                @if ($canAccessModule(['customers.view', 'customers.create']))
+                    <a href="{{ route($user->hasPermission('customers.view') ? 'customers.index' : 'customers.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                        <i class="bi bi-people"></i>
+                        <span>Clientes</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('suppliers.index') }}"
-                class="nav-link-custom {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
-                    <i class="bi bi-truck"></i>
-                    <span>Fornecedores</span>
-                </a>
+                @if ($canAccessModule(['suppliers.view', 'suppliers.create']))
+                    <a href="{{ route($user->hasPermission('suppliers.view') ? 'suppliers.index' : 'suppliers.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
+                        <i class="bi bi-truck"></i>
+                        <span>Fornecedores</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('products.index') }}"
-                class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
-                    <i class="bi bi-box-seam"></i>
-                    <span>Produtos</span>
-                </a>
+                @if ($canAccessModule(['products.view', 'products.create']))
+                    <a href="{{ route($user->hasPermission('products.view') ? 'products.index' : 'products.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Produtos</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('categories.index') }}"
-                class="nav-link-custom {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-                    <i class="bi bi-tags"></i>
-                    <span>Categorias</span>
-                </a>
+                @if ($canAccessModule(['categories.view', 'categories.create']))
+                    <a href="{{ route($user->hasPermission('categories.view') ? 'categories.index' : 'categories.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                        <i class="bi bi-tags"></i>
+                        <span>Categorias</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('units.index') }}"
-                class="nav-link-custom {{ request()->routeIs('units.*') ? 'active' : '' }}">
-                    <i class="bi bi-rulers"></i>
-                    <span>Unidades de medida</span>
-                </a>
+                @if ($canAccessModule(['units.view', 'units.create']))
+                    <a href="{{ route($user->hasPermission('units.view') ? 'units.index' : 'units.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('units.*') ? 'active' : '' }}">
+                        <i class="bi bi-rulers"></i>
+                        <span>Unidades de medida</span>
+                    </a>
+                @endif
                 
-                <a href="{{ route('stock.index') }}"
-                class="nav-link-custom {{ request()->routeIs('stock.*') ? 'active' : '' }}">
-                    <i class="bi bi-boxes"></i>
-                    <span>Estoque</span>
-                </a>
+                @if ($user->hasPermission('stock.view'))
+                    <a href="{{ route('stock.index') }}"
+                    class="nav-link-custom {{ request()->routeIs('stock.*') ? 'active' : '' }}">
+                        <i class="bi bi-boxes"></i>
+                        <span>Estoque</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('purchases.index') }}"
-                class="nav-link-custom {{ request()->routeIs('purchases.*') ? 'active' : '' }}">
-                    <i class="bi bi-tags"></i>
-                    <span>Compras</span>
-                </a>
+                @if ($canAccessModule(['purchases.view', 'purchases.create']))
+                    <a href="{{ route($user->hasPermission('purchases.view') ? 'purchases.index' : 'purchases.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('purchases.*') ? 'active' : '' }}">
+                        <i class="bi bi-bag"></i>
+                        <span>Compras</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('modules.show', ['modulo' => 'vendas']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/vendas') ? 'active' : '' }}">
-                    <i class="bi bi-cart3"></i><span>Vendas</span>
-                </a>
+                @if ($canAccessModule(['sales.view', 'sales.create']))
+                    <a href="{{ route($user->hasPermission('sales.view') ? 'sales.index' : 'sales.create') }}"
+                    class="nav-link-custom {{ request()->routeIs('sales.*') ? 'active' : '' }}">
+                        <i class="bi bi-cart3"></i>
+                        <span>Vendas</span>
+                    </a>
+                @endif
             </nav>
 
-            <div class="sidebar-label">GESTÃO</div>
-
             <nav class="sidebar-nav">
-                <a href="{{ route('modules.show', ['modulo' => 'financeiro']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/financeiro') ? 'active' : '' }}">
-                    <i class="bi bi-graph-up-arrow"></i>
-                    <span>Financeiro</span>
-                    <span class="demo-dot" title="Modo demonstrativo"></span>
-                </a>
 
-                <a href="{{ route('modules.show', ['modulo' => 'caixa']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/caixa') ? 'active' : '' }}">
-                    <i class="bi bi-cash-stack"></i>
-                    <span>Caixa</span>
-                    <span class="demo-dot" title="Modo demonstrativo"></span>
-                </a>
+                @if ($canAccessModule([
+                    'financial-accounts.view',
+                    'financial-accounts.create'
+                ]))
+                    <a href="{{ route(
+                        $user->hasPermission('financial-accounts.view')
+                            ? 'financial-accounts.index'
+                            : 'financial-accounts.create'
+                    ) }}"
+                    class="nav-link-custom {{ request()->routeIs('financial-accounts.*') ? 'active' : '' }}">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Financeiro</span>
+                    </a>
+                @endif
 
-                <a href="{{ route('modules.show', ['modulo' => 'relatorios']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/relatorios') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i><span>Relatórios</span>
-                </a>
+                @if ($user->hasPermission('cash-flow.view'))
+                    <a href="{{ route('financial.cash-flow.index') }}"
+                    class="nav-link-custom {{ request()->routeIs('financial.cash-flow.*') ? 'active' : '' }}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Fluxo de Caixa</span>
+                    </a>
+                @endif
+
+                @if ($user->hasPermission('modules.view'))
+                    <a href="{{ route('reports.index') }}"
+                    class="nav-link-custom {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                        <span>Relatórios</span>
+                    </a>
+                @endif
+
+                @if ($user->canManageUsers())
+                    <a href="{{ route('users.index') }}"
+                    class="nav-link-custom {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                        <i class="bi bi-person-gear"></i>
+                        <span>Usuários</span>
+                    </a>
+
+                    <a href="{{ route('audit-logs.index') }}"
+                    class="nav-link-custom {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Auditoria</span>
+                    </a>
+                @endif
+
             </nav>
 
             <div class="sidebar-bottom">
-                <a href="{{ route('modules.show', ['modulo' => 'configuracoes']) }}"
-                   class="nav-link-custom {{ request()->is('modulos/configuracoes') ? 'active' : '' }}">
-                    <i class="bi bi-gear"></i><span>Configurações</span>
-                </a>
+
+                @if ($user->hasPermission('modules.view'))
+                    <a href="{{ route('modules.show', ['modulo' => 'configuracoes']) }}"
+                    class="nav-link-custom {{ request()->is('modulos/configuracoes') ? 'active' : '' }}">
+                        <i class="bi bi-gear"></i>
+                        <span>Configurações</span>
+                    </a>
+                @endif
 
                 <div class="environment-note">
                     <i class="bi bi-info-circle"></i>
                     <span>Ambiente em desenvolvimento</span>
                 </div>
+
             </div>
         </aside>
 
@@ -143,13 +211,32 @@
                     <span class="topbar-eyebrow">ERP COMERCIAL</span>
                     <span class="topbar-title">@yield('page-heading', 'Visão geral')</span>
                 </div>
-
+                
                 <div class="topbar-right">
                     <span class="environment-badge">
                         <span></span> Desenvolvimento
                     </span>
-                    <div class="user-avatar" title="Usuário de demonstração">
-                        <i class="bi bi-person"></i>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="user-avatar"
+                            title="{{ Auth::user()->name }}">
+                            <i class="bi bi-person"></i>
+                        </div>
+
+                        <span class="d-none d-md-inline fw-semibold">
+                            {{ Auth::user()->name }}
+                        </span>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+
+                            <button type="submit"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    title="Sair do sistema">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span class="d-none d-lg-inline">Sair</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </header>

@@ -162,16 +162,16 @@
                                 <span class="d-none d-lg-inline">Editar</span>
                             </a>
 
-                            @if ($supplier->is_active)
-                                <form
-                                    method="POST"
-                                    action="{{ route('suppliers.deactivate', $supplier) }}"
-                                    class="d-inline"
-                                    onsubmit="return confirm('Deseja desativar este fornecedor?')"
-                                >
-                                    @csrf
-                                    @method('PATCH')
+                            <form
+                                method="POST"
+                                action="{{ route('suppliers.toggle-status', $supplier) }}"
+                                class="d-inline"
+                                onsubmit="return confirm('Deseja {{ $supplier->is_active ? 'desativar' : 'ativar' }} este fornecedor?')"
+                            >
+                                @csrf
+                                @method('PATCH')
 
+                                @if ($supplier->is_active)
                                     <button
                                         type="submit"
                                         class="btn btn-sm btn-outline-danger"
@@ -180,8 +180,17 @@
                                         <i class="bi bi-person-x"></i>
                                         <span class="d-none d-lg-inline">Desativar</span>
                                     </button>
-                                </form>
-                            @endif
+                                @else
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-success"
+                                        title="Ativar fornecedor"
+                                    >
+                                        <i class="bi bi-person-check"></i>
+                                        <span class="d-none d-lg-inline">Ativar</span>
+                                    </button>
+                                @endif
+                            </form>
                         </td>
                     </tr>
                 @empty

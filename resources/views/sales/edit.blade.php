@@ -8,7 +8,7 @@
     </div>
 </div>
 
-<form action="{{ route('sales.update', $sale) }}" method="POST">
+<form action="{{ route('sales.update', $sale) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 

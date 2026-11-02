@@ -8,11 +8,14 @@ use App\Models\Sale;
 use App\Services\SaleService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Models\AuditLog;
+use App\Services\AttachmentService;
 
 class SaleController extends Controller
 {
     public function __construct(
-        private readonly SaleService $saleService
+        private readonly SaleService $saleService,
+        private readonly AttachmentService $attachmentService
     ) {
     }
 
@@ -79,7 +82,15 @@ class SaleController extends Controller
     {
         $data = $this->validateSale($request);
 
+        $files = $data['attachments'] ?? [];
+
+        unset($data['attachments']);
+
         $sale = $this->saleService->create($data);
+
+        if (! empty($files)) {
+            $this->attachmentService->storeMany($sale, $files);
+        }
 
         return redirect()
             ->route('sales.show', $sale)
@@ -91,9 +102,38 @@ class SaleController extends Controller
         $sale->load([
             'customer',
             'items.product',
+            'attachments.uploader',
         ]);
 
-        return view('sales.show', compact('sale'));
+        $sale->loadMissing('financialAccount.transactions');
+
+        $auditQuery = AuditLog::query()
+            ->where('auditable_type', $sale->getMorphClass())
+            ->where('auditable_id', (string) $sale->getKey())
+            ->where('event', 'updated');
+
+        $creator = AuditLog::query()
+            ->where('auditable_type', $sale->getMorphClass())
+            ->where('auditable_id', (string) $sale->getKey())
+            ->where('event', 'created')
+            ->first();
+
+        $completionLog = (clone $auditQuery)
+            ->where('new_values->status', Sale::STATUS_COMPLETED)
+            ->latest('created_at')
+            ->first();
+
+        $cancellationLog = (clone $auditQuery)
+            ->where('new_values->status', Sale::STATUS_CANCELLED)
+            ->latest('created_at')
+            ->first();
+
+        return view('sales.show', compact(
+            'sale',
+            'creator',
+            'completionLog',
+            'cancellationLog'
+        ));
     }
 
     public function edit(Sale $sale)
@@ -138,7 +178,15 @@ class SaleController extends Controller
     {
         $data = $this->validateSale($request, $sale);
 
+        $files = $data['attachments'] ?? [];
+
+        unset($data['attachments']);
+
         $sale = $this->saleService->update($sale, $data);
+
+        if (! empty($files)) {
+            $this->attachmentService->storeMany($sale, $files);
+        }
 
         return redirect()
             ->route('sales.show', $sale)
@@ -148,11 +196,17 @@ class SaleController extends Controller
     
     public function cancel(Sale $sale)
     {
-        $sale = $this->saleService->cancelDraft($sale);
+        $wasCompleted = $sale->status === Sale::STATUS_COMPLETED;
+
+        $sale = $this->saleService->cancel($sale);
+
+        $message = $wasCompleted
+            ? 'Venda cancelada e estoque estornado com sucesso.'
+            : 'Rascunho de venda cancelado com sucesso.';
 
         return redirect()
             ->route('sales.show', $sale)
-            ->with('success', 'Rascunho de venda cancelado com sucesso.');
+            ->with('success', $message);
     }
 
 
@@ -173,6 +227,18 @@ class SaleController extends Controller
                 'max:30',
                 Rule::unique('sales', 'number')
                     ->ignore($sale?->id),
+            ],
+
+            'attachments' => [
+                'nullable',
+                'array',
+                'max:10',
+            ],
+
+            'attachments.*' => [
+                'file',
+                'mimes:pdf,jpg,jpeg,png,webp',
+                'max:10240',
             ],
 
             'sale_date' => [
@@ -245,17 +311,46 @@ class SaleController extends Controller
 
             'items.*.discount.min' => 'O desconto do item não pode ser negativo.',
             'items.*.discount.decimal' => 'O desconto do item deve ter no máximo duas casas decimais.',
+
+            'attachments.array' => 'Os comprovantes enviados são inválidos.',
+            'attachments.max' => 'Você pode enviar no máximo 10 comprovantes por vez.',
+            'attachments.*.file' => 'Um dos arquivos enviados é inválido.',
+            'attachments.*.mimes' => 'Os comprovantes devem estar nos formatos PDF, JPG, JPEG, PNG ou WEBP.',
+            'attachments.*.max' => 'Cada comprovante pode ter no máximo 10 MB.',
         ]);
     }
 
     
-    public function complete(Sale $sale)
-    {
-        $sale = $this->saleService->complete($sale);
+    public function complete(
+        Request $request,
+        Sale $sale
+    ) {
+        $data = $request->validate([
+            'due_date' => [
+                'required',
+                'date',
+                'after_or_equal:' . $sale->sale_date->format('Y-m-d'),
+            ],
+        ], [
+            'due_date.required' =>
+                'Informe a data de vencimento da conta a receber.',
+            'due_date.date' =>
+                'Informe uma data de vencimento válida.',
+            'due_date.after_or_equal' =>
+                'A data de vencimento não pode ser anterior à data da venda.',
+        ]);
+
+        $sale = $this->saleService->complete(
+            $sale,
+            $data['due_date']
+        );
 
         return redirect()
             ->route('sales.show', $sale)
-            ->with('success', 'Venda concluída e estoque atualizado com sucesso.');
+            ->with(
+                'success',
+                'Venda concluída, estoque atualizado e conta a receber gerada com sucesso.'
+            );
     }
 
 }

@@ -112,6 +112,9 @@
                     <option value="DEVOLUCAO" @selected(old('reason') === 'DEVOLUCAO')>
                         Devolução
                     </option>
+                    <option value="ESTORNO_VENDA" @selected(old('reason') === 'ESTORNO_VENDA')>
+                        Estorno de Venda
+                    </option>
                     <option value="AJUSTE" @selected(old('reason') === 'AJUSTE')>
                         Ajuste de estoque
                     </option>

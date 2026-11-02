@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('content')
@@ -8,7 +9,7 @@
     </div>
 </div>
 
-<form action="{{ route('purchases.store') }}" method="POST">
+<form action="{{ route('purchases.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
 
     @include('purchases._form')

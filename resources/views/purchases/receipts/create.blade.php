@@ -52,7 +52,7 @@
     </div>
 </div>
 
-<form action="{{ route('purchases.receipts.store', $purchase) }}" method="POST">
+<form action="{{ route('goods-receipts.store', $purchase) }}" method="POST">
     @csrf
 
     <div class="content-card">

@@ -4,45 +4,78 @@
 @section('page-heading', $module['title'])
 
 @section('content')
-    <div class="page-heading">
-        <div>
-            <span class="eyebrow">MÓDULO DO SISTEMA</span>
-            <h1>{{ $module['title'] }}</h1>
-            <p>{{ $module['description'] }}</p>
-        </div>
-    </div>
 
-    @if (in_array($module['status'], ['Demonstração']))
-        <div class="alert alert-warning demo-alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <strong>Modo demonstrativo:</strong>
-            esta área não registra operações financeiras reais.
-            Os dados e indicadores apresentados aqui, quando houver,
-            serão fictícios.
+    @if(($module['slug'] ?? null) === 'relatorios')
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-cart-check fs-2 text-primary"></i>
+                            <h5 class="fw-semibold mb-0">Relatório de Vendas</h5>
+                        </div>
+
+                        <p class="text-muted">
+                            Consulte faturamento, clientes e produtos vendidos.
+                        </p>
+
+                        <a href="{{ route('reports.sales.index') }}"
+                        class="btn btn-outline-primary">
+                            Acessar relatório
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-truck fs-2 text-success"></i>
+                            <h5 class="fw-semibold mb-0">Relatório de Compras</h5>
+                        </div>
+
+                        <p class="text-muted">
+                            Consulte valores comprados, fornecedores e produtos adquiridos.
+                        </p>
+
+                        <a href="{{ route('reports.purchases.index') }}"
+                        class="btn btn-outline-primary">
+                            Acessar relatório
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ route('reports.financial.index') }}" class="btn btn-outline-primary">
+                <i class="bi bi-cash-stack me-1"></i>
+                Relatório Financeiro
+            </a>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <i class="bi bi-box-seam fs-2 text-warning"></i>
+                            <h5 class="fw-semibold mb-0">Relatório de Estoque</h5>
+                        </div>
+
+                        <p class="text-muted">
+                            Consulte saldos atuais e produtos que precisam de reposição.
+                        </p>
+
+                        <a
+                            href="{{ route('reports.stock.index') }}"
+                            class="btn btn-outline-primary"
+                        >
+                            Acessar relatório
+                        </a>
+                    </div>
+                </div>
+            </div>
+
         </div>
     @endif
 
-    <section class="module-panel">
-        <div class="module-panel-icon">
-            <i class="bi {{ $module['icon'] }}"></i>
-        </div>
-
-        <span class="module-status">{{ $module['status'] }}</span>
-
-        <h2>{{ $module['title'] }}</h2>
-        <p>{{ $module['description'] }}</p>
-
-        <div class="module-divider"></div>
-
-        <p class="module-help">
-            Esta página é a estrutura inicial do módulo. As funcionalidades
-            serão implementadas e testadas em etapas, com validação dos
-            dados e regras de negócio antes de serem consideradas concluídas.
-        </p>
-
-        <a href="{{ route('dashboard') }}" class="btn btn-primary">
-            <i class="bi bi-arrow-left me-2"></i>
-            Voltar ao dashboard
-        </a>
-    </section>
 @endsection

@@ -111,7 +111,16 @@ class StockController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('stock.history', compact('movements'));
+        $movementIds = $movements->getCollection()->pluck('id');
+
+        $auditLogs = \App\Models\AuditLog::query()
+            ->where('auditable_type', (new StockMovement())->getMorphClass())
+            ->whereIn('auditable_id', $movementIds->map(fn ($id) => (string) $id))
+            ->where('event', 'created')
+            ->get()
+            ->keyBy('auditable_id');
+
+        return view('stock.history', compact('movements', 'auditLogs'));
     }
 
     /**
@@ -158,6 +167,7 @@ class StockController extends Controller
                     'COMPRA',
                     'VENDA',
                     'DEVOLUCAO',
+                    'ESTORNO_VENDA',
                     'AJUSTE',
                     'PERDA',
                     'USO_INTERNO',

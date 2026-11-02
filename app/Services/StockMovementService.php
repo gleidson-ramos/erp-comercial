@@ -19,13 +19,11 @@ class StockMovementService
             $type = $data['type'];
 
             // Garante que exista uma linha de saldo para o produto.
-            // O índice UNIQUE de product_id protege contra duplicidades.
-            DB::table('inventory_stocks')->insertOrIgnore([
-                'product_id' => $productId,
-                'quantity' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // O firstOrCreate utiliza o Eloquent e dispara os eventos de auditoria.
+            InventoryStock::query()->firstOrCreate(
+                ['product_id' => $productId],
+                ['quantity' => 0]
+            );
 
             // Bloqueia a linha até o fim da transação.
             $stock = InventoryStock::query()

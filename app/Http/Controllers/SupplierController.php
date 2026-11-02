@@ -245,4 +245,20 @@ class SupplierController extends Controller
 
         return false;
     }
+
+    public function toggleStatus(Supplier $supplier)
+    {
+        $supplier->update([
+            'is_active' => !$supplier->is_active,
+        ]);
+
+        return redirect()
+            ->route('suppliers.index')
+            ->with(
+                'success',
+                $supplier->is_active
+                    ? 'Fornecedor ativado com sucesso.'
+                    : 'Fornecedor desativado com sucesso.'
+            );
+    }
 }

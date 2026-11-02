@@ -234,6 +234,42 @@
     </div>
 </div>
 
+
+<hr class="my-4">
+
+<div>
+    <h2 class="h5 mb-1">Comprovantes e documentos</h2>
+    <p class="text-muted mb-3">
+        Anexe notas, pedidos, orçamentos ou outros documentos relacionados à compra.
+    </p>
+
+    <label for="attachments" class="form-label">
+        Selecionar arquivos
+    </label>
+
+    <input
+        type="file"
+        name="attachments[]"
+        id="attachments"
+        class="form-control @error('attachments') is-invalid @enderror @error('attachments.*') is-invalid @enderror"
+        accept=".pdf,.jpg,.jpeg,.png,.webp"
+        multiple
+    >
+
+    @error('attachments')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+
+    @error('attachments.*')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+
+    <small class="text-muted d-block mt-2">
+        PDF ou imagens (JPG, PNG e WEBP). Máximo de 10 arquivos, com até 10 MB cada.
+    </small>
+</div>
+
+
 <div class="form-actions mt-3">
     <a
         href="{{ $isEdit ? route('purchases.show', $purchase) : route('purchases.index') }}"

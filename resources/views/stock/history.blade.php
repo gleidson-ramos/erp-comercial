@@ -84,21 +84,29 @@
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
-                    <th>Data</th>
+                    <th>Data e horário</th>
                     <th>Produto</th>
                     <th>Tipo</th>
                     <th>Quantidade</th>
                     <th>Custo unitário</th>
                     <th>Motivo</th>
                     <th>Saldo após</th>
+                    <th>Responsável</th>
                 </tr>
             </thead>
 
             <tbody>
                 @forelse($movements as $movement)
+                    @php
+                        $auditLog = $auditLogs->get((string) $movement->id);
+                    @endphp
+
                     <tr>
                         <td>
-                            {{ $movement->moved_at->format('d/m/Y H:i') }}
+                            {{ $movement->moved_at->format('d/m/Y') }}
+                            <div class="small text-muted">
+                                {{ $movement->moved_at->format('H:i') }}
+                            </div>
                         </td>
 
                         <td>
@@ -134,7 +142,9 @@
                         <td>
                             {{ [
                                 'COMPRA' => 'Compra',
+                                'VENDA' => 'Venda',
                                 'DEVOLUCAO' => 'Devolução',
+                                'ESTORNO_VENDA' => 'Estorno de venda',
                                 'AJUSTE' => 'Ajuste',
                                 'PERDA' => 'Perda',
                                 'USO_INTERNO' => 'Uso interno',
@@ -145,18 +155,33 @@
                         <td class="fw-semibold">
                             {{ number_format((float) $movement->balance_after, 3, ',', '.') }}
                         </td>
+
+                        <td>
+                            @if($auditLog)
+                                <div class="fw-semibold">
+                                    {{ $auditLog->user_name ?? 'Usuário não identificado' }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ $auditLog->created_at->format('d/m/Y H:i') }}
+                                </small>
+                            @else
+                                <span class="text-muted">
+                                    Não identificado
+                                </span>
+                            @endif
+                        </td>
                     </tr>
 
                     @if($movement->notes)
                         <tr>
-                            <td colspan="7" class="small text-muted pt-0">
+                            <td colspan="8" class="small text-muted pt-0">
                                 Observações: {{ $movement->notes }}
                             </td>
                         </tr>
                     @endif
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             Nenhuma movimentação encontrada.
                         </td>
                     </tr>

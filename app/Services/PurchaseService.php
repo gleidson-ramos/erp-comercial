@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\FinancialAccount;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -67,9 +68,11 @@ class PurchaseService
         }, 3);
     }
 
-    public function confirm(Purchase $purchase): Purchase
-    {
-        return DB::transaction(function () use ($purchase) {
+    public function confirm(
+        Purchase $purchase,
+        string $dueDate
+    ): Purchase {
+        return DB::transaction(function () use ($purchase, $dueDate) {
             $purchase = Purchase::query()
                 ->lockForUpdate()
                 ->findOrFail($purchase->id);
@@ -87,6 +90,58 @@ class PurchaseService
                         'Adicione pelo menos um produto antes de confirmar.',
                 ]);
             }
+
+            // Evita gerar uma segunda conta para a mesma compra.
+            if (
+                FinancialAccount::query()
+                    ->where('purchase_id', $purchase->id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'purchase' =>
+                        'Já existe uma conta financeira vinculada a esta compra.',
+                ]);
+            }
+
+            $totalCents = (int) round((float) $purchase->total * 100);
+
+            if ($totalCents <= 0) {
+                throw ValidationException::withMessages([
+                    'purchase' =>
+                        'O total da compra deve ser maior que zero para gerar a conta a pagar.',
+                ]);
+            }
+
+            $supplier = Supplier::query()->find($purchase->supplier_id);
+
+            if (! $supplier || ! $supplier->is_active) {
+                throw ValidationException::withMessages([
+                    'supplier_id' =>
+                        'A compra precisa estar vinculada a um fornecedor ativo.',
+                ]);
+            }
+
+            FinancialAccount::create([
+                'type' => FinancialAccount::TYPE_PAYABLE,
+                'supplier_id' => $purchase->supplier_id,
+                'purchase_id' => $purchase->id,
+                'description' => 'Compra ' . (
+                    $purchase->number ?: '#' . $purchase->id
+                ),
+                'document_number' => $purchase->number,
+                'issue_date' => $purchase->purchase_date,
+                'due_date' => $dueDate,
+                'amount' => number_format(
+                    $totalCents / 100,
+                    2,
+                    '.',
+                    ''
+                ),
+                'discount' => '0.00',
+                'interest' => '0.00',
+                'status' => FinancialAccount::STATUS_OPEN,
+                'notes' => 'Conta gerada automaticamente na confirmação da compra.',
+            ]);
 
             $purchase->update([
                 'status' => Purchase::STATUS_CONFIRMED,
@@ -201,8 +256,12 @@ class PurchaseService
             ]);
         }
 
-        // Só substituímos os itens depois de validar todos os dados.
-        $purchase->items()->delete();
+        // Exclui individualmente para disparar os eventos de auditoria.
+        $purchase->items()->get()->each(function ($item) {
+            $item->delete();
+        });
+
+        // Cria os novos itens utilizando o Eloquent.
         $purchase->items()->createMany($preparedItems);
 
         $purchase->update([

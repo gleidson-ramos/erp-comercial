@@ -214,6 +214,65 @@
         >{{ old('notes', $sale->notes ?? '') }}</textarea>
     </div>
 
+    <div class="mt-4">
+        <label for="attachments" class="form-label">
+            Documentos Associados
+        </label>
+
+        <input
+            type="file"
+            name="attachments[]"
+            id="attachments"
+            class="form-control"
+            accept=".pdf,.jpg,.jpeg,.png,.webp"
+            multiple
+        >
+
+        <div class="form-text">
+            Você pode enviar até 10 arquivos por vez, nos formatos PDF, JPG,
+            JPEG, PNG ou WEBP. Tamanho máximo de 10 MB por arquivo.
+        </div>
+
+        @error('attachments')
+            <div class="text-danger small mt-1">{{ $message }}</div>
+        @enderror
+
+        @foreach ($errors->get('attachments.*') as $messages)
+            @foreach ($messages as $message)
+                <div class="text-danger small mt-1">{{ $message }}</div>
+            @endforeach
+        @endforeach
+    </div>
+
+    @if ($isEdit && $sale->attachments->isNotEmpty())
+        <div class="mt-3">
+            <h6>Documentos já anexados</h6>
+
+            <ul class="list-group">
+                @foreach ($sale->attachments as $attachment)
+                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>{{ $attachment->original_name }}</strong>
+
+                            <div class="text-muted small">
+                                Enviado por {{ $attachment->uploader?->name ?? 'Usuário não identificado' }}
+                                em {{ $attachment->created_at->format('d/m/Y H:i') }}
+                            </div>
+                        </div>
+
+                        <a
+                            href="{{ route('attachments.download', $attachment) }}"
+                            class="btn btn-sm btn-outline-primary"
+                        >
+                            <i class="bi bi-download"></i>
+                            Baixar
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="form-actions mt-4">
         <a href="{{ route('sales.index') }}" class="btn btn-outline-secondary">
             Voltar

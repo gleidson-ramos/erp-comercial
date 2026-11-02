@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Purchase extends Model
 {
+    use Auditable;
+    
     public const STATUS_DRAFT = 'RASCUNHO';
     public const STATUS_CONFIRMED = 'CONFIRMADA';
     public const STATUS_PARTIAL = 'PARCIALMENTE_RECEBIDA';
@@ -37,6 +41,11 @@ class Purchase extends Model
         ];
     }
 
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
@@ -58,5 +67,13 @@ class Purchase extends Model
             self::STATUS_CONFIRMED,
             self::STATUS_PARTIAL,
         ], true);
+    }
+
+    public function financialAccount()
+    {
+        return $this->hasOne(
+            \App\Models\FinancialAccount::class,
+            'purchase_id'
+        );
     }
 }

@@ -23,10 +23,15 @@
     </div>
 @endif
 
-<form action="{{ route('purchases.update', $purchase) }}" method="POST">
+<form
+    action="{{ route('purchases.update', $purchase) }}"
+    method="POST"
+    enctype="multipart/form-data"
+>
     @csrf
     @method('PUT')
 
     @include('purchases._form')
 </form>
+
 @endsection
